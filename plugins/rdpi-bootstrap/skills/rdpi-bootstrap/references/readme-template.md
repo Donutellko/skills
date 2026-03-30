@@ -69,6 +69,14 @@ Each task creates a folder:
 
 Your RDPI preferences are saved in `./rdpi/RDPI_SKILLS_SPEC.md`. To update them, run `/rdpi-bootstrap` again.
 
+## Skills Location
+
+{{#if MARKETPLACE}}
+Skills are registered as a global marketplace at `{{MARKETPLACE_PATH}}`. They are available across projects via `~/.claude/settings.json`.
+{{else}}
+Skills live in `.claude/skills/` and are auto-discovered by Claude Code — no extra configuration needed.
+{{/if}}
+
 ## Tips
 
 - **For small fixes**, skip RDPI entirely — just prompt directly. RDPI pays off on tasks that take more than ~30 minutes of implementation.
