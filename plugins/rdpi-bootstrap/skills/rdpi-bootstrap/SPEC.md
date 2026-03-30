@@ -334,12 +334,16 @@ The user does NOT read the full plan. The agent presents:
 
 **Internal steps:**
 
-#### Step 1: Worktree Setup
+#### Step 1: Branch & Worktree Setup
 
 *QRSPI has Worktree as a separate stage. We fold it into Implement for UX simplicity — acknowledged deviation.*
 
-- Create a git branch for the task
-- Optionally use git worktree for isolation (if the environment supports it)
+Before writing any code, the orchestrator (or each implementation sub-agent) must ensure a clean branch from up-to-date main:
+1. `git checkout main && git pull`
+2. Create a new branch: `{task-id}/{short-description}` (e.g., `PROJ-123/user-auth-flow`)
+3. Optionally use git worktree for isolation (if the environment supports it)
+
+This is non-negotiable — implementation never starts on a stale branch or directly on main.
 
 #### Step 2: Execution
 
