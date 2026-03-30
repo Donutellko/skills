@@ -1,17 +1,26 @@
 {
-  "name": "anthropic-agent-skills",
+  "name": "donutellko-skills",
   "owner": {
-    "name": "Keith Lazuka",
-    "email": "klazuka@anthropic.com"
+    "name": "Donat Shergalis",
+    "email": "donutellko@github"
   },
   "metadata": {
-    "description": "Anthropic example skills",
+    "description": "Personal skills collection — RDPI workflow bootstrap and curated upstream Anthropic skills",
     "version": "1.0.0"
   },
   "plugins": [
     {
+      "name": "rdpi-bootstrap",
+      "description": "Set up the RDPI (Research → Design → Plan → Implement) development workflow for a project with context-engineered phases",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./plugins/rdpi-bootstrap/skills/rdpi-bootstrap"
+      ]
+    },
+    {
       "name": "document-skills",
-      "description": "Collection of document processing suite including Excel, Word, PowerPoint, and PDF capabilities",
+      "description": "Document processing suite: Excel, Word, PowerPoint, and PDF (from upstream anthropics/skills)",
       "source": "./",
       "strict": false,
       "skills": [
@@ -23,7 +32,7 @@
     },
     {
       "name": "example-skills",
-      "description": "Collection of example skills demonstrating various capabilities including skill creation, MCP building, visual design, algorithmic art, internal communications, web testing, artifact building, Slack GIFs, and theme styling",
+      "description": "Example skills from upstream anthropics/skills: visual design, algorithmic art, MCP building, web testing, and more",
       "source": "./",
       "strict": false,
       "skills": [
@@ -39,16 +48,6 @@
         "./skills/theme-factory",
         "./skills/web-artifacts-builder",
         "./skills/webapp-testing"
-      ]
-    }
-    ,
-    {
-      "name": "claude-api",
-      "description": "Claude API and SDK documentation skill for building LLM-powered applications",
-      "source": "./",
-      "strict": false,
-      "skills": [
-        "./skills/claude-api"
       ]
     }
   ]
