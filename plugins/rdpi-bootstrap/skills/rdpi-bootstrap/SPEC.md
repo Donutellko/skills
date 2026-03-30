@@ -1,9 +1,9 @@
 # RDPI Bootstrap — Specification
 
 **Date**: 2026-03-30
-**Status**: Draft v3
+**Status**: Draft v4
 **Authors**: Donat + Claude
-**Based on**: Dex Horthy "Context Engineering" (QRSPI update), Dmitry Bereznitsky "Process over Prompts"
+**Based on**: Dex Horthy "Context Engineering" (QRSPI), Dmitry Bereznitsky "Process over Prompts"
 
 ---
 
@@ -11,10 +11,10 @@
 
 | Term | Meaning |
 |------|---------|
-| **QRSPI** | The full methodology: Questions → Research → (Spec) → Design → Structure → Plan → Implement. Originated from Dex Horthy's updated workflow (sometimes transcribed as "CRISPY"). |
-| **RDPI** | Our 4 top-level skills: Research, Design, Plan, Implement. Each skill internally implements multiple QRSPI stages. The 4-skill split exists for clean context separation and UX simplicity. |
+| **QRSPI** | The full methodology from Dex Horthy: Questions → Research → Design → Structure/Outline → Plan → Worktree → Implement → PR. |
+| **RDPI** | Our 4 top-level skills: Research, Design, Plan, Implement. Each skill internally implements multiple QRSPI stages. |
 | **Phase** | One of the 4 RDPI skills. Each phase runs in a fresh Claude session. |
-| **Artifact** | A structured markdown file produced by a phase, serving as the contract for the next phase. |
+| **Artifact** | A structured markdown file produced by a phase, serving as the contract for the next phase. Artifacts on disk replace context compaction — the context window is ephemeral, the artifact files are durable state. |
 | **Vertical slice** | An end-to-end piece of functionality (not a horizontal layer like "all backend"). |
 
 ### Why 4 Skills, Not 8 Stages?
@@ -23,6 +23,15 @@ QRSPI defines 8 logical stages. We collapse them into 4 skills because:
 1. **Context isolation where it matters most.** The biggest context-pollution risk is between Research→Design→Plan→Implement. Within a phase, sub-agents provide additional isolation (e.g., blind Research sub-agent runs in its own context).
 2. **UX simplicity.** 4 commands to remember, not 8. Each command does a coherent chunk of work.
 3. **The orchestrator overhead is manageable.** Within Research, the main agent holds interview context + spawns a blind sub-agent. The interview is user input (high-signal), not accumulated LLM output (low-signal noise).
+
+### Our Extensions Beyond QRSPI
+
+The following are our additions, not from Dex's talks:
+- **Spec artifact** — output of Research phase, locks down requirements before Design
+- **Complexity-based phase skipping** — Research recommends skipping phases for simpler tasks
+- **Spec consistency check** — sub-agent in Plan phase verifies plan covers all Spec requirements
+- **Draft PR workflow** — code review happens in a Draft PR
+- **Deploy & Verify** — speculative, Dex did not cover the implement side in detail
 
 ---
 
@@ -48,9 +57,9 @@ When developers use AI on a new project, they typically fall into the "prompt �
 
 Each RDPI phase runs in a fresh Claude session (user clears context between phases). The only input is the artifact(s) from the previous phase. This prevents the "dumb zone" problem (context degradation at ~40% window fill).
 
-### 2. Artifacts as the Single Source of Truth
+### 2. Artifacts Replace Compaction
 
-Every phase produces a structured markdown artifact. The artifact is the contract between phases — not the conversation history.
+Every phase produces structured markdown artifacts on disk. These artifacts are the durable state — the context window is ephemeral and disposable. Auto-compaction is unnecessary because everything that matters is in static files. You can always resume from where you left off by reading the artifacts.
 
 ### 3. Runtime Agent Discovery
 
@@ -58,7 +67,7 @@ The meta-skill does NOT hardcode specific agents or skills. At execution time, i
 
 ### 4. "Go Back and Forth With Me"
 
-Both the meta-skill interview and the generated Research phase skill must ensure mutual understanding through iterative dialogue. Claude should not assume — it should confirm.
+Both the meta-skill interview and the generated Research/Design phase skills must ensure mutual understanding through iterative dialogue. Claude should not assume — it should confirm.
 
 ### 5. Recommended Options with Annotations
 
@@ -66,23 +75,23 @@ When using `AskUserQuestion`, always mark the recommended option and annotate ch
 
 ### 6. Instruction Budget
 
-Each generated SKILL.md must stay under 500 lines. If it grows beyond that, extract content into `references/` files that are read on demand. The underlying principle: ~150-200 actionable instructions is the sweet spot. More than that degrades model performance.
+The total instruction-following budget across all sources (system prompt, tools, MCP, CLAUDE.md, skill) is ~150-200 instructions. Each individual phase SKILL.md should aim for **under 40 instructions** — Dex's updated target. If a skill grows beyond that, it should delegate to sub-agents or extract content into `references/` files read on demand.
 
-### 7. Non-biased Research
+### 7. Minimal Tool Surface Per Phase
 
-Research sub-agents operate WITHOUT knowledge of the specific task. They receive only questions about the codebase and return facts. This prevents confirmation bias. Note: true blindness is impossible since the questions themselves encode task assumptions. The goal is to prevent the research agent from selectively finding evidence that supports a pre-determined solution. The research agent should also report unexpected findings beyond the questions asked.
+Each phase should only load the agents, MCPs, and tools it actually needs — not all available ones. Discovered agents/MCPs contribute to the instruction budget. Loading unnecessary tools bloats the context window.
 
-### 8. Vertical Slicing
+### 8. Non-biased Research
+
+Research sub-agents operate WITHOUT knowledge of the specific task. They receive only questions about the codebase and return facts. This prevents confirmation bias. Note: true blindness is impossible since the questions themselves encode task assumptions (our observation). The goal is to prevent the research agent from selectively finding evidence that supports a pre-determined solution. The research agent should also report unexpected findings beyond the questions asked.
+
+### 9. Vertical Slicing
 
 Implementation is organized as end-to-end vertical slices, not horizontal layers. Instead of "all backend, then all frontend", each slice delivers a complete piece of functionality that can be demonstrated and verified.
 
-### 9. No Magic Prompts
+### 10. No Magic Prompts — Pipeline as Control
 
-Skills should work through pipeline structure and context quality, not through prompt engineering tricks ("think step by step", "you are an expert", "take a deep breath"). If a skill only works with specific phrasing, the design is wrong. The pipeline IS the control mechanism.
-
-### 10. Pipeline as Control
-
-The sequence of phases, context boundaries, and artifact contracts are the control mechanism. Individual skill prompts should be simple and direct. Control through code/pipeline, not through prompt.
+Skills should work through pipeline structure and context quality, not through prompt engineering tricks. If a skill only works with specific phrasing, the design is wrong. The sequence of phases, context boundaries, and artifact contracts are the control mechanism. Use code for control flow, not prompts.
 
 ### 11. Bad Trajectory Recovery
 
@@ -90,7 +99,7 @@ If the conversation within a phase goes sideways (user has corrected the agent 2
 
 ### 12. Human Reads Code
 
-The user is expected to read and verify code — not just trust artifacts. During Research, the user should spot-check key code paths identified by the research agent. Code review happens before PR creation (in a Draft PR or locally).
+The user is expected to read and verify code — not just trust artifacts. Code review happens in the Draft PR. During Research, the user should spot-check key code paths identified by the research agent.
 
 ---
 
@@ -107,9 +116,9 @@ The user is expected to read and verify code — not just trust artifacts. Durin
 ./rdpi/RPI_SKILLS_SPEC.md          — Spec of user's preferences and project context
 ./rdpi/skills/
 ├── rdpi-research/SKILL.md         — Research phase skill (Questions + blind Research + Spec)
-├── rdpi-design/SKILL.md           — Design phase skill (Design doc + Structure/Outline)
-├── rdpi-plan/SKILL.md             — Plan phase skill (parallel plans per role/phase)
-├── rdpi-implement/SKILL.md        — Implement phase skill (orchestrator + sub-agents + PR + deploy)
+├── rdpi-design/SKILL.md           — Design phase skill (interactive Design + Structure/Outline)
+├── rdpi-plan/SKILL.md             — Plan phase skill (plan + spec consistency check)
+├── rdpi-implement/SKILL.md        — Implement phase skill (orchestrator + sub-agents + PR)
 └── README.md                      — Usage guide with phase order and commands
 ```
 
@@ -122,6 +131,8 @@ Each generated skill:
 ---
 
 ## Complexity-Based Phase Skipping
+
+*Our extension — not from QRSPI.*
 
 Not every task needs the full 4-phase pipeline. At the end of Research, the agent assesses task complexity and recommends the next step:
 
@@ -152,7 +163,7 @@ The user always makes the final decision.
 
 **Input:** User description of the task (feature or bug) + task ID (Jira/Rally/GitHub issue).
 
-**Internal steps (QRSPI: Q + R + Spec):**
+**Internal steps:**
 
 #### Step 1: Questions (with user)
 
@@ -176,6 +187,8 @@ Spawn a sub-agent that receives ONLY the research questions — NOT the task des
 
 #### Step 3: Spec Writing
 
+*Our extension — QRSPI does not have a separate Spec stage.*
+
 With the user's requirements (from Questions) and the codebase facts (from Research), write a structured Spec artifact. The Spec is the contract for all subsequent phases.
 
 #### Step 4: Complexity Assessment & Next Step
@@ -187,13 +200,12 @@ Assess the task complexity based on the Spec and Research findings. Present next
 ./rdpi/{folder}/01-research/
 ├── questions.md                   — Research questions formulated from user interview
 ├── research.md                    — Blind research results (facts only)
-├── spec.md                        — Requirements spec
-└── review-{agent}.md              — Reviews by discovered agents
+└── spec.md                        — Requirements spec
 ```
 
-**User review point:** The Spec — optional but recommended. The user can review it to confirm mutual understanding of requirements, or trust the interview process and move on.
+**User review point:** The Spec — optional. The user can review it to confirm mutual understanding, or trust the interview process and move on.
 
-**Ends with:** Complexity-based next step recommendation (see above).
+**Ends with:** Complexity-based next step recommendation.
 
 ---
 
@@ -205,12 +217,17 @@ Assess the task complexity based on the Spec and Research findings. Present next
 
 **Internal steps:**
 
-#### Step 1: Design Document
+#### Step 1: Interactive Design Document
 
-The agent reads the Spec and Research results and produces a detailed Design document (~200 lines):
+The agent reads the Spec and Research results and produces a Design document (~200 lines). This is an **interactive process** — the agent brain-dumps the design and the human corrects, shapes, and refines it through dialogue. Not a waterfall, but a collaborative back-and-forth.
+
+The Design document contains:
 - Current state of the system (from Research)
-- Desired state (from Spec)
+- Desired end state (from Spec)
+- Patterns found in the codebase to follow
 - Architectural approach and key decisions (ADR)
+- Resolved design decisions (with rationale)
+- Open questions (for the human to answer)
 - No code — only architecture, contracts, data flow
 
 **Adaptive depth** (determined automatically from Spec complexity):
@@ -221,25 +238,20 @@ The agent reads the Spec and Research results and produces a detailed Design doc
 | **Standard** | Typical features | C4 component diagram + API contracts + test strategy + ADR |
 | **Full** | Cross-module changes, new subsystems | All of Standard + sequence diagrams + data flow + security review |
 
-**Design + Critic review:**
+The human interacts with the Design until all open questions are resolved and both sides agree on the approach.
 
-The agent produces a design, then a Critic sub-agent reviews it — challenges assumptions, finds weaknesses, identifies risks. The agent incorporates valid critique into the final design. For Full depth, the Critic review is more thorough.
+#### Step 2: Structure/Outline (sub-agent, separate context)
 
-#### Step 2: Spec Consistency Check (sub-agent)
+A sub-agent generates a Structure/Outline from the final Design (in a fresh context, as per Dex's recommendation — Design and Structure in different context windows). The sub-agent reads the Design + Research + Spec.
 
-A sub-agent verifies that the Design is consistent with the original Spec:
-- All requirements from the Spec are addressed
-- No requirements were silently dropped or altered
-- Any deviations are explicitly documented with rationale
-
-#### Step 3: Structure/Outline (sub-agent)
-
-A sub-agent generates a Structure/Outline from the final Design:
+The Structure/Outline contains:
 - High-level breakdown into vertical slices (end-to-end increments)
 - Each slice is demonstrable to the user
 - Order of delivery: start with what the user can see and give feedback on
-- No code, no file paths — just the logical decomposition
+- How to test along the way
 - Diagrams: Mermaid or PlantUML (per project convention, default Mermaid)
+
+The Structure starts high-level but can include **types, function signatures, and file paths** when the user asks for more detail (like C header files — the signatures and types, not the implementation).
 
 **Iteration loop:** User reviews Structure/Outline. If changes needed → agent revises Design → sub-agent regenerates Structure/Outline.
 
@@ -253,15 +265,12 @@ A sub-agent generates a Structure/Outline from the final Design:
 **Output artifacts:**
 ```
 ./rdpi/{folder}/02-design/
-├── design.md                      — Final design with critic feedback incorporated
+├── design.md                      — Final design (interactive, shaped by human)
 ├── structure-outline.md           — Vertical slices breakdown (USER REVIEWS THIS)
-├── c4-diagrams.md                 — Architecture diagrams (part of Structure review)
-├── critic-review.md               — Critic agent's review of the design
-├── spec-consistency.md            — Spec consistency check results
-└── review-{agent}.md              — Reviews by discovered agents
+└── c4-diagrams.md                 — Architecture diagrams (part of Structure review)
 ```
 
-**User review point:** Structure/Outline + C4 diagrams — mandatory. This is THE synchronization point between human and agent before code. The user does NOT need to read the full Design document — the Structure is the user-facing summary.
+**User review point:** Structure/Outline + C4 diagrams — **mandatory**. This is THE synchronization point between human and agent before code. The user does NOT need to read the full Design document — the Structure is the user-facing summary. The Design was already shaped by the human during interactive creation.
 
 **Ends with:** `Next: clear context, then run /rdpi-plan ./rdpi/{folder}`
 
@@ -269,55 +278,48 @@ A sub-agent generates a Structure/Outline from the final Design:
 
 ### Phase 3: Plan (`/rdpi-plan`)
 
-**Goal:** Convert Design + Structure into concrete, actionable execution plans.
+**Goal:** Convert Design + Structure into a concrete, actionable execution plan.
 
-**Input:** Design + Structure/Outline artifacts from Phase 2 (read from disk in fresh context).
+**Input:** Design + Structure/Outline + Research artifacts (read from disk in fresh context).
 
 **Internal steps:**
 
-#### Step 1: Generate Plans (parallel sub-agents)
+#### Step 1: Generate Plan
 
-Multiple plans are generated in parallel, one per role/concern:
-- **Per vertical slice** — each delivery increment gets its own plan
-- **Per role** — frontend, backend, database, tests, documentation, verification
-- Plans are generated by parallel sub-agents, each reading the Design + source code
-
-Each plan contains:
+One agent generates the plan from Design + Structure + Research + source code. The plan contains:
 - Exact file paths (create/modify)
 - Verification steps (build commands, test commands)
 - Commit messages
-- Dependencies on other plans
-
-#### Step 2: Global Plan
-
-One synthesized global plan with:
-- Execution order across slices and roles
-- Parallelization opportunities (e.g., frontend + backend after contracts locked)
-- Links to individual role/phase plans
+- Execution order with parallelization opportunities
 - Checkpoints where user review is needed
 
-#### Step 3: Plan Review (internal feedback loop)
+For multi-phase tasks: the plan covers all vertical slices, with per-slice breakdowns.
 
-Discovered review agents check plans for feasibility and completeness. A Spec Consistency sub-agent verifies that plans cover all Spec requirements.
+#### Step 2: Spec Consistency Check (sub-agent)
 
-Review results are used as an internal feedback loop — if issues are found, the agent fixes them before presenting to the user. The user does NOT read review details, only the summary.
+*Our extension — not from QRSPI.*
 
-#### Step 4: Brief Summary for User
+A sub-agent verifies that the Plan is consistent with the original Spec:
+- All requirements from the Spec are addressed by the plan
+- No requirements were silently dropped
+- Any deviations are flagged
 
-The user does NOT read the full plan. Instead, the agent presents:
+If issues found, the agent fixes them before presenting to the user.
+
+#### Step 3: Brief Summary for User
+
+The user does NOT read the full plan. The agent presents:
 - A brief summary of what will be done (1-2 paragraphs)
 - Number of phases and estimated scope
 - Which parts can run in parallel
-- Any risks or issues surfaced by the review (high-level only)
+- Any issues surfaced by the spec consistency check (high-level only)
 
 **Output artifacts:**
 ```
 ./rdpi/{folder}/03-plan/
-├── plan-global.md                 — Master plan with links to sub-plans
-├── plan-{slice}-{role}.md         — Individual plans per slice/role
-├── summary.md                     — Brief summary for user (NOT the full plan)
+├── plan.md                        — Full plan (for the agent, not for human)
 ├── spec-consistency.md            — Plan vs Spec consistency check
-└── review-{agent}.md              — Internal review results (not for user)
+└── summary.md                     — Brief summary shown to user
 ```
 
 **Ends with:** Presents the brief summary, then: `Next: clear context, then run /rdpi-implement ./rdpi/{folder}`
@@ -326,37 +328,42 @@ The user does NOT read the full plan. Instead, the agent presents:
 
 ### Phase 4: Implement (`/rdpi-implement`)
 
-**Goal:** Execute the plan phase by phase with an orchestrator agent managing specialized sub-agents.
+**Goal:** Execute the plan with an orchestrator agent managing specialized sub-agents.
 
-**Input:** Plan artifacts from Phase 3 + Design for reference (read from disk in fresh context).
+**Input:** Plan + Design artifacts (read from disk in fresh context).
 
 **Internal steps:**
 
 #### Step 1: Worktree Setup
 
+*QRSPI has Worktree as a separate stage. We fold it into Implement for UX simplicity — acknowledged deviation.*
+
 - Create a git branch for the task
 - Optionally use git worktree for isolation (if the environment supports it)
 
-#### Step 2: Phase-by-Phase Execution
+#### Step 2: Execution
 
 The orchestrator agent:
-1. Reads the global plan and identifies the current phase
-2. Spawns specialized sub-agents per role (frontend, backend, tests, etc.) according to the plan
-3. Sub-agents can run in parallel when plans allow it
-4. After each phase/slice completion:
+1. Reads the plan and identifies phases/slices
+2. Spawns specialized sub-agents per role (frontend, backend, tests, etc.) as needed
+3. Sub-agents can run in parallel when the plan allows it
+4. After each slice completion:
    - Writes updates to `implementation-log.md`
-   - Prompts the user to review the result
-   - Waits for user confirmation before proceeding
+   - **First slice:** mandatory user review (test the result, confirm direction)
+   - **Subsequent slices:** configurable — user can opt for review or auto-proceed
 
 #### Step 3: Draft Pull Request
 
+*QRSPI has PR as a separate stage. We fold it into Implement — acknowledged deviation. Our addition: Draft PR for code review.*
+
 After user confirms the implementation:
-- Create a **Draft PR** (sub-agent) — allows the user to review code in the PR interface
+- Create a **Draft PR** (sub-agent) — the user reviews code in the PR interface
 - Include: summary from Design, changes made, test results
-- The user reviews code in the Draft PR (this is the code review step)
 - User promotes Draft to Ready when satisfied
 
-#### Step 4: Deploy & Verify (if available)
+#### Step 4: Deploy & Verify (opt-in)
+
+*Speculative — Dex did not cover the implement side in detail.*
 
 If deployment capability was discovered during bootstrap:
 - Propose deploying for verification (sub-agent)
@@ -369,13 +376,13 @@ Whether the agent can deploy autonomously is determined during rdpi-bootstrap se
 ```
 ./rdpi/{folder}/04-implement/
 ├── implementation-log.md          — Progress log with updates per phase
-├── review-{agent}.md              — Code reviews by agents
 └── pr-summary.md                  — PR description and link
 ```
 
 **User review points:**
-- Result after each delivery increment (test it)
-- Code in Draft PR (code review)
+- First slice result (mandatory — test it)
+- Subsequent slices (configurable)
+- Code in Draft PR (mandatory — code review)
 - PR before merge
 
 ---
@@ -387,26 +394,19 @@ Whether the agent can deploy autonomously is determined during rdpi-bootstrap se
 ├── 01-research/
 │   ├── questions.md                   — Research questions from user interview
 │   ├── research.md                    — Blind research results
-│   ├── spec.md                        ← USER REVIEW (optional)
-│   └── review-{agent}.md
+│   └── spec.md                        ← USER REVIEW (optional)
 ├── 02-design/
-│   ├── design.md                      — Full design (internal)
+│   ├── design.md                      — Full design (internal, shaped by human)
 │   ├── structure-outline.md           ← USER REVIEW (mandatory)
-│   ├── c4-diagrams.md                ← USER REVIEW (mandatory, part of Structure)
-│   ├── critic-review.md              — Critic's review
-│   ├── spec-consistency.md           — Spec consistency check
-│   └── review-{agent}.md
+│   └── c4-diagrams.md                ← USER REVIEW (mandatory, part of Structure)
 ├── 03-plan/
-│   ├── plan-global.md                — Master plan (internal)
-│   ├── plan-{slice}-{role}.md        — Sub-plans (internal)
-│   ├── summary.md                    — Brief summary shown to user
-│   ├── spec-consistency.md           — Plan vs Spec check
-│   └── review-{agent}.md            — Internal reviews
+│   ├── plan.md                        — Full plan (internal, for the agent)
+│   ├── spec-consistency.md            — Plan vs Spec check (internal)
+│   └── summary.md                     — Brief summary shown to user
 ├── 04-implement/
 │   ├── implementation-log.md
-│   ├── review-{agent}.md
 │   └── pr-summary.md
-└── MANIFEST.md                       — Navigation index with status of each phase
+└── MANIFEST.md                        — Navigation index with status of each phase
 ```
 
 The `{folder}` format defaults to `{YYYY-MM-DD}-{task-id}-{short-name}`. The meta-skill asks the user for their preferred format during bootstrap interview.
@@ -423,7 +423,7 @@ The `{folder}` format defaults to `{YYYY-MM-DD}-{task-id}-{short-name}`. The met
 
 2. **Check for existing project-specific skills:** Look for skills like `implement-feature`, `implement-story`, or any skill that reflects project specifics. Extract useful context from them.
 
-3. **Discover available agents and skills:** Enumerate all agents and skills available in the current environment. Catalog their capabilities for assignment to RDPI phases.
+3. **Discover available agents and skills:** Enumerate all agents and skills available in the current environment. Catalog their capabilities for assignment to RDPI phases. Only assign agents that are actually needed per phase (Principle 7: Minimal Tool Surface).
 
 4. **Interview the user** using `AskUserQuestion` — go back and forth:
    - What types of tasks will you use RDPI for? (feature impl, bug fixing, both)
@@ -442,15 +442,16 @@ The `{folder}` format defaults to `{YYYY-MM-DD}-{task-id}-{short-name}`. The met
 5. **Save spec:** Write answers to `./rdpi/RPI_SKILLS_SPEC.md`
 
 6. **Propose agent assignments:** Based on discovered agents, propose which agents handle which RDPI roles:
-   - Research: blind research sub-agent, review agents
-   - Design: design agent, critic agent, spec-consistency checker, review agents
-   - Plan: parallel plan generators per role, spec-consistency checker
-   - Implement: orchestrator, specialized coders, code review agents, PR agent, deploy agent, monitoring agent
+   - Research: blind research sub-agent
+   - Design: structure/outline sub-agent
+   - Plan: spec-consistency checker sub-agent
+   - Implement: orchestrator, specialized coders (per role), PR sub-agent, optionally deploy/monitor agents
    - Present the mapping to the user for confirmation
 
 7. **Generate phase skills:** Create the 4 RDPI skills + README in `./rdpi/skills/`
    - Each skill reads its phase template from the meta-skill's bundled references
    - Each skill is customized with project-specific: paths, build commands, conventions, assigned agents
+   - Each skill must stay under ~40 instructions
 
 8. **Output:** Display what was created and how to start using it. Include realistic expectations: this workflow is designed for medium-to-large tasks where upfront investment pays off. For small fixes, use direct prompts. Expect 2-3x productivity improvement on suitable tasks.
 
@@ -472,12 +473,11 @@ The `{folder}` format defaults to `{YYYY-MM-DD}-{task-id}-{short-name}`. The met
 - Bug fixing workflow (adapted RDPI — lighter Design, focused Research)
 - Generating project-specific RDPI skills
 - Runtime discovery and assignment of available agents
-- Design + Critic review (single design with critic, not multi-perspective)
-- Spec consistency checking across phases
+- Spec consistency checking in Plan phase (our extension)
 - Vertical slice delivery planning
-- Complexity-based phase skipping
-- Draft PR creation and code review workflow
-- Deployment and post-deploy monitoring (where available)
+- Complexity-based phase skipping (our extension)
+- Draft PR creation and code review workflow (our extension)
+- Deployment and post-deploy monitoring (opt-in, speculative)
 
 ### Out of Scope (for now)
 - Refactoring-only workflows
@@ -490,14 +490,13 @@ The `{folder}` format defaults to `{YYYY-MM-DD}-{task-id}-{short-name}`. The met
 ## Dependencies
 
 ### Required
-- `AskUserQuestion` tool — for interview flow
-- `Agent` tool — for spawning sub-agents (blind research, critic, parallel plans, implementation)
+- `AskUserQuestion` tool — for interview flow and interactive Design
+- `Agent` tool — for spawning sub-agents (blind research, structure outline, spec consistency, implementation)
 - File system tools (Read, Write, Glob, Grep) — for codebase analysis and skill generation
 
 ### Optional (discovered at runtime)
 - `implement-spec` or similar — can be delegated to during Implement phase
 - `interview` skill — can be used/adapted for Research phase interview
-- Any review agents (devil's advocate, architecture, clean-code, regression, linebyline, security)
 - Any deployment/CI tools
 - Browser testing capabilities (for post-deploy verification)
 
