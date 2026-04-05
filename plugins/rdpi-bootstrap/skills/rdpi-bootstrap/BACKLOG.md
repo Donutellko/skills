@@ -65,10 +65,17 @@ Currently out of scope. When added:
 - Refactoring: Research focused on impact analysis, Design on before/after patterns
 - Migration: Research on source/target systems, Design on migration strategy + rollback
 
-### B-011: Artifacts Replace Compaction — Disable Auto-Compaction
+### B-011: Big Picture Agent — Related Ticket Context
+After reading a ticket by ID, the Research phase should spawn a sub-agent that builds the "big picture":
+- Read the current ticket plus related tickets (parent, siblings, children)
+- Check the artifacts directory for existing implementations of related tickets
+- Summarize: what's already done, what's in progress, how the current ticket fits into the broader initiative
+This gives the agent context on dependencies, prior decisions, and potential conflicts before diving into research.
+
+### B-013: Artifacts Replace Compaction — Disable Auto-Compaction
 Principle 2 says artifacts replace compaction. Should the generated skills explicitly instruct Claude to avoid auto-compaction? Or is this handled by the clean-context-per-phase design?
 
-### ~~B-012: Spec Artifact Template~~ → Partially resolved
+### ~~B-014: Spec Artifact Template~~ → Partially resolved
 `RDPI_SKILLS_SPEC.md` template defined in SPEC.md (Registration + Parameter Provenance sections). Research phase `spec.md` template still needs definition (requirements, acceptance criteria, constraints, out of scope, complexity assessment).
 
 ---
