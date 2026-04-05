@@ -124,6 +124,8 @@ Next step (clear your context before running):
 → /rdpi-implement {{ARTIFACT_FOLDER}}
 ```
 
+Print this command as plain text. Do NOT use the Skill tool to invoke the next phase. The user runs it in a fresh session.
+
 ## Recovery
 
 If the plan seems wrong or the user disagrees with the approach, the issue is likely in the Design, not the Plan. Suggest going back to `/rdpi-design` rather than trying to fix fundamental architecture in the Plan phase.

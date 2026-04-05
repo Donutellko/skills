@@ -259,7 +259,7 @@ Assess the task complexity based on the Spec and Research findings. Present next
 
 **User review point:** The Spec — optional. The user can review it to confirm mutual understanding, or trust the interview process and move on.
 
-**Ends with:** Complexity-based next step recommendation.
+**Ends with:** Complexity-based next step recommendation. Print the command as plain text only — do NOT invoke the next phase via the Skill tool or any other programmatic mechanism. The user runs the command in a fresh session.
 
 ---
 
@@ -326,7 +326,7 @@ The Structure starts high-level but can include **types, function signatures, an
 
 **User review point:** Structure/Outline + C4 diagrams — **mandatory**. This is THE synchronization point between human and agent before code. The user does NOT need to read the full Design document — the Structure is the user-facing summary. The Design was already shaped by the human during interactive creation.
 
-**Ends with:** `Next: clear context, then run /rdpi-plan ./rdpi/{folder}`
+**Ends with:** `Next: clear context, then run /rdpi-plan ./rdpi/{folder}` — print as plain text only. Do NOT invoke the next phase via the Skill tool or any other programmatic mechanism. The user runs the command in a fresh session.
 
 ---
 
@@ -376,7 +376,7 @@ The user does NOT read the full plan. The agent presents:
 └── summary.md                     — Brief summary shown to user
 ```
 
-**Ends with:** Presents the brief summary, then: `Next: clear context, then run /rdpi-implement ./rdpi/{folder}`
+**Ends with:** Presents the brief summary, then: `Next: clear context, then run /rdpi-implement ./rdpi/{folder}` — print as plain text only. Do NOT invoke the next phase via the Skill tool or any other programmatic mechanism. The user runs the command in a fresh session.
 
 ---
 

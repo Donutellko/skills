@@ -124,3 +124,7 @@ If implementation is going sideways:
 - If the issue is in the plan (wrong approach) → suggest going back to `/rdpi-plan`
 - If the issue is in the design (wrong architecture) → suggest going back to `/rdpi-design`
 - If the conversation has degraded → suggest restarting this phase. `implementation-log.md` preserves progress; completed slices are already committed.
+
+## Next Phase
+
+Implement is the final RDPI phase — there is no automatic next step. If you suggest going back to a previous phase (e.g. `/rdpi-plan` or `/rdpi-design`), print the command as plain text only. Do NOT use the Skill tool to invoke any phase automatically.

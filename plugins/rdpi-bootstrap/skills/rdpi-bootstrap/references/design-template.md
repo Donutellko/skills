@@ -98,6 +98,8 @@ Next step (clear your context before running):
 → /rdpi-plan {{ARTIFACT_FOLDER}}
 ```
 
+Print this command as plain text. Do NOT use the Skill tool to invoke the next phase. The user runs it in a fresh session.
+
 ## Recovery
 
 If the conversation has gone sideways (user corrected you 2-3+ times in a row), suggest restarting this phase. The Design document on disk preserves your progress — a fresh context will read it and continue from there.

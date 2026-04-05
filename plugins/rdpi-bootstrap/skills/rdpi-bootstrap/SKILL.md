@@ -231,6 +231,7 @@ These principles come from the source methodology and shape every generated skil
 8. **Bad trajectory recovery** — if the user has corrected you 2-3 times in a row, suggest restarting the phase.
 9. **Human reads code** — code review happens in the PR, not just via artifacts.
 10. **Right model for the right job** — Opus for decisions, Sonnet for execution, Haiku for monitoring.
+11. **Never invoke the next phase** — print the next command as plain text and stop. Do NOT use the Skill tool or any other mechanism to trigger the next phase automatically. The user runs it in a fresh session.
 
 ---
 

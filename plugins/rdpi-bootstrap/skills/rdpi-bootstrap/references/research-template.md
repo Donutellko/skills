@@ -123,6 +123,8 @@ Next steps (clear your context before running):
 
 The user always decides.
 
+**Important:** Print the next command as plain text only. Do NOT use the Skill tool or any other mechanism to invoke the next phase automatically. The user runs the command in a fresh session.
+
 ## Recovery
 
 If the conversation has gone sideways (user corrected you 2-3+ times in a row), suggest: "It seems like we're not aligned. Want to restart this phase with a fresh context? I'll re-read the artifacts we've created so far."
