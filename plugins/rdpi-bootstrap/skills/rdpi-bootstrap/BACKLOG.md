@@ -72,6 +72,63 @@ After reading a ticket by ID, the Research phase should spawn a sub-agent that b
 - Summarize: what's already done, what's in progress, how the current ticket fits into the broader initiative
 This gives the agent context on dependencies, prior decisions, and potential conflicts before diving into research.
 
+### B-018: Structured Introduction + Closing Pattern for rdpi-bootstrap
+
+The skill execution should follow this pattern:
+
+**1. Opening — show intro immediately (before any questions)**
+Show the two-table introduction we formulated:
+- Table 1: commands per phase
+- Phrase: "Clear context between each phase..."
+- One-sentence QRSPI explanation
+- Table 2: sub-phases with who/output/user action
+- Note: Design and Plan are optional based on complexity
+End with: "Now I'll ask you a few questions and scan the codebase to tailor these skills to your project."
+
+**2. Interview + research (Steps 1–4 from skill)**
+Run as normal.
+
+**3. Pre-confirm deviation summary**
+Before showing the full settings confirmation table (Step 5), output a concise line if anything will differ from the default workflow shown in the intro. Examples:
+- "No Deploy/Verify step — not configured for this project."
+- "Design phase skipped by default — you selected Sonnet only."
+- "Multi-phase delivery enabled — Plan will include slice breakdown."
+If nothing differs: skip this entirely.
+
+**4. Closing — show commands table again**
+After skill generation is complete (Step 10), repeat Table 1 (commands only).
+End with: "Easy to remember — it's in the name: **R**DPI. Always start with **R**: `/rdpi-research`."
+
+**5. README.md**
+The same two tables (commands + sub-phases) must also be written to `.claude/skills/README.md` (or the marketplace equivalent). This is the persistent reference — the intro shown during bootstrap is ephemeral, the README stays.
+
+**Why this pattern works:**
+- User sees the full picture before committing to the interview
+- Deviations are surfaced explicitly, not buried in the settings table
+- Closing table is the actionable takeaway — user has it fresh when ready to start
+
+### B-015: Concise Communication Style
+The skill must communicate tersely throughout — matching caveman-style rules from user's CLAUDE.md. Specific violations to avoid:
+- Long paragraphs explaining what it's about to do
+- Verbose confirmations after tool output
+- Restating what the user said
+Applied to: interview questions, parameter confirmation, status updates, next-step prompts.
+
+### B-016: Workflow Outline After Settings Confirmation
+After the user confirms auto-determined settings (D-014 confirm step), the skill should output a concise workflow outline showing what RDPI will look like for THIS project. Not generic docs — personalized to the confirmed settings:
+- Commands the user will type per phase
+- What each phase produces (artifact names, paths)
+- Which phases are optional based on complexity
+- Any project-specific notes (task tracker, branch format, deploy step)
+Format: table or numbered list, max ~20 lines. Purpose: user sees the full picture before committing.
+
+### B-017: Phase Skills Must Not Invoke Next Phase
+Each generated phase skill must end with the next command as plain text — not invoke it. The skill should print `/rdpi-design ./rdpi/{folder}` and stop. It must never call `Skill` tool or otherwise trigger the next phase automatically. User runs the next command in a fresh session.
+
+### B-019: Re-run Prompt After Bootstrap Completion
+After skill generation is complete, add this line:
+"If anything in the RDPI workflow doesn't fit your needs, run `/rdpi-bootstrap <description of desired changes>` to refine it."
+
 ### B-013: Artifacts Replace Compaction — Disable Auto-Compaction
 Principle 2 says artifacts replace compaction. Should the generated skills explicitly instruct Claude to avoid auto-compaction? Or is this handled by the clean-context-per-phase design?
 
