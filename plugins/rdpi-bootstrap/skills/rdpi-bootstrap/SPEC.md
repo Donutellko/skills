@@ -487,7 +487,7 @@ The `{folder}` format defaults to `{YYYY-MM-DD}-{task-id}-{short-name}`. The met
 
 2. **Check for existing project-specific skills:** Look for skills like `implement-feature`, `implement-story`, or any skill that reflects project specifics. Extract useful context from them.
 
-3. **Discover available agents and skills:** Enumerate all agents and skills available in the current environment. Catalog their capabilities for assignment to RDPI phases. Only assign agents that are actually needed per phase (Principle 7: Minimal Tool Surface).
+3. **Discover available agents and skills:** Enumerate all agents and skills available in the current environment. Catalog their capabilities for assignment to RDPI phases. Only assign agents that are actually needed per phase (Principle 7: Minimal Tool Surface). Also silently auto-detect: branch naming convention (from `git log`, default `feature/{ticket-id}-{short-name}` if undetectable), commit message style (from `git log`), ticket format (from CLAUDE.md or Rally/Jira config), and quality gate (from Makefile, CLAUDE.md, CI config).
 
 4. **Interview the user** using `AskUserQuestion` — go back and forth. Auto-detect what you can from the codebase first, then ask only what's unclear:
    - What types of tasks will you use RDPI for? (feature impl, bug fixing, both)
@@ -518,6 +518,10 @@ The `{folder}` format defaults to `{YYYY-MM-DD}-{task-id}-{short-name}`. The met
      Diagrams:        Mermaid                              (default)
      Folder format:   ./rdpi/{YYYY-MM-DD}-{task-id}-...   (default)
      Browser testing: No                                   (default)
+     Branch format:   feature/US{id}-{short-name}          (auto-detected: git log / CLAUDE.md)
+     Commit style:    type: message                        (auto-detected: git log)
+     Ticket format:   US{id}                               (auto-detected: CLAUDE.md / Rally)
+     Quality gate:    ruff + mypy + pytest + cov ≥30%      (auto-detected: Makefile)
      ...
 
      Anything to change? (Enter to confirm all)
@@ -616,7 +620,8 @@ The spec file captures all bootstrap decisions with provenance tracking. Bootstr
 |-----------|-------|--------|
 | Branch naming | ... | auto-detected (git log) |
 | Commit style | ... | auto-detected (git log) |
-| Quality gate | ... | auto-detected (CLAUDE.md) |
+| Ticket format | ... | auto-detected (CLAUDE.md / Rally) |
+| Quality gate | ... | auto-detected (Makefile / CLAUDE.md) |
 | ... | ... | ... |
 
 ## User Preferences

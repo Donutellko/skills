@@ -109,9 +109,10 @@ Keep the interview conversational. If the user says "just use defaults", accept 
 ### Step 3: Auto-detect remaining values
 
 For anything not explicitly asked, silently auto-detect from the codebase:
-- Branch naming convention (from `git log`)
+- Branch naming convention (from `git log`) — default if undetectable: `feature/{ticket-id}-{short-name}`
 - Commit message style (from `git log`)
-- Quality gates (from CLAUDE.md, CI config)
+- Ticket format (from CLAUDE.md or Rally/Jira config)
+- Quality gates (from Makefile, CLAUDE.md, CI config) — e.g., `ruff + mypy + pytest + cov ≥30%`
 - Existing coding standards
 
 ### Step 4: Reserved (placeholder for future use)
@@ -144,6 +145,10 @@ Here's what I've configured:
   Models:          [summary]                        (spec default / user override)
   Task types:      [value]                          (user interview)
   Multi-phase:     [value]                          (default / user choice)
+  Branch format:   feature/US{id}-{short-name}      (auto-detected: git log / CLAUDE.md)
+  Commit style:    type: message                    (auto-detected: git log)
+  Ticket format:   US{id}                           (auto-detected: CLAUDE.md / Rally)
+  Quality gate:    ruff + mypy + pytest + cov ≥30%  (auto-detected: Makefile)
 
   Anything to change? (Enter to confirm all)
 ```
@@ -157,6 +162,7 @@ Write confirmed answers to `./rdpi/RDPI_SKILLS_SPEC.md`. Read the template from 
 - **Source column for every value** (D-015): `auto-detected ({file})`, `user interview`, `default`, `user override`
 - Registration details (where skills are placed, method used)
 - Model deviations from spec defaults must note the reason
+- All four auto-detected convention fields (Branch format, Commit style, Ticket format, Quality gate) go into the **Discovered Conventions** table in RDPI_SKILLS_SPEC.md
 
 ### Step 7: Propose agent assignments
 
