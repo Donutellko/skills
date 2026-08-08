@@ -226,6 +226,74 @@ Principle 2 says artifacts replace compaction. Should the generated skills expli
 ### ~~B-014: Spec Artifact Template~~ → Partially resolved
 `RDPI_SKILLS_SPEC.md` template defined in SPEC.md (Registration + Parameter Provenance sections). Research phase `spec.md` template still needs definition (requirements, acceptance criteria, constraints, out of scope, complexity assessment).
 
+### B-029: Parallel Spec Refinement Pipeline
+
+Replace the serial Research→Design spec loop with parallel sub-agents to collapse multi-session v4→v5-style refinement into a single session:
+
+1. **Drafter** sub-agent writes initial spec to `spec-draft.md` from the research brief
+2. **Devil's advocate** sub-agent reads the draft, writes critical review + alternative approaches to `spec-review.md`
+3. **Reconciler** sub-agent reads both files, merges the best ideas, flags unresolved trade-offs, writes final `spec.md`
+
+Only unresolved trade-offs surface to the user for a decision.
+
+**Why:** Iterative spec refinement (e.g. bootstrap v4→v5) requires multiple back-and-forth sessions. Parallel sub-agents simulate the same adversarial review in one shot, surfacing only genuine decision points.
+
+**Where:** Research phase — after blind research sub-agent completes, before presenting spec to user. Enable by default for Complex tasks; optional for Medium.
+
+---
+
+### B-028: Open Structure/Outline in VS Code After Generation
+
+After the sub-agent writes `structure-outline.md`, the design skill should automatically open it in VS Code:
+```
+code <path>/02-design/structure-outline.md
+```
+So the user can review it without having to navigate to the file manually.
+
+---
+
+### B-030: Research Agent Should Proactively Search context7 for Documentation
+
+During the Research phase, the generated `rdpi-research` skill should instruct the agent to use the `mcp__context7__resolve-library-id` and `mcp__context7__query-docs` MCP tools when the feature involves any library, framework, SDK, API, or CLI tool — even well-known ones like React, FastAPI, SQLAlchemy, Celery, etc. This prevents the agent from relying on potentially stale training data and ensures research is grounded in current docs.
+
+**What to add:** In the Research phase skill template (`references/research-template.md`), add an explicit step: "For each library or framework identified during research, query context7 for current documentation before forming conclusions."
+
+**When to trigger:** Any time a library import, framework name, or external API is mentioned in the ticket or discovered during codebase scan.
+
+---
+
+### B-031: Single qdi-work Skill with Persistent rdpi/ Folder Awareness
+
+Shift from multiple discrete skills (rdpi-research, rdpi-design, rdpi-plan, rdpi-implement) to a single comprehensive `qdi-work skill that:
+- Accepts a single command for the entire QDI (Question, Design, Implement) workflow
+- Has Claude remain in the same session throughout execution
+- At any point, the agent is aware of the entire rdpi/ folder structure and contents
+- Maintains context of previous phases' outputs even if the user doesn't explicitly call the current phase
+
+**Why:** Multi-skill handoffs lose context between sessions. A single persistent session with full rdpi/ awareness ensures coherent decision-making and prevents context fragmentation.
+
+**How:** 
+- Research phase reads existing rdpi/ subfolders as context before starting
+- Implements "context carry" - previous phase outputs automatically available
+- Agent doesn't need to re-read completed artifacts for subsequent phases
+
+---
+
+### B-027: Structure/Outline Sub-agent Prompt Produces Over-detailed Output
+
+The sub-agent prompt in `rdpi-design` SKILL.md generates structure outlines that are as large or larger than the design doc itself. Root causes:
+
+1. Item 5 in the prompt explicitly invites code: `"include them (like C header files — signatures, not implementation)"` — sub-agent interprets this as licence to include full function signatures, dataclass definitions, YAML schemas, pyproject.toml snippets, and Makefile targets.
+2. No explicit prohibition on code blocks, schemas, or config.
+3. "Diagrams in Mermaid format where helpful" produces per-slice diagrams, not just one overview.
+
+**Fix:**
+- Remove item 5 (signatures invitation) entirely — signatures belong in the Plan phase.
+- Replace with: `"NO code, signatures, schemas, or config snippets. Each slice: files changed (create/edit) + 3-5 test bullets only."`
+- Change diagram instruction to: `"One Mermaid data-flow diagram for the whole feature if the wiring is non-obvious. No per-slice diagrams."`
+
+**Location to fix:** `rdpi-design` SKILL.md, Step 2 sub-agent prompt (the triple-backtick block).
+
 ---
 
 ## Source Material References

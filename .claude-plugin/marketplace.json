@@ -19,6 +19,24 @@
       ]
     },
     {
+      "name": "qdi-bootstrap",
+      "description": "Set up the QDI (Questions → Design → Implement) development workflow — streamlined 3-phase alternative to RDPI with lightweight Work mode",
+      "source": "./plugins/qdi-bootstrap",
+      "strict": false,
+      "skills": [
+        "./skills/qdi-bootstrap"
+      ]
+    },
+    {
+      "name": "rdpi-tools",
+      "description": "Utilities for maintaining the RDPI workflow: add items to BACKLOG.md",
+      "source": "./plugins/rdpi-tools",
+      "strict": false,
+      "skills": [
+        "./skills/backlog-add"
+      ]
+    },
+    {
       "name": "document-skills",
       "description": "Document processing suite: Excel, Word, PowerPoint, and PDF (from upstream anthropics/skills)",
       "source": "./",
